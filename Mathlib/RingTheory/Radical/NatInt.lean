@@ -12,6 +12,8 @@ public import Mathlib.Data.Nat.PrimeFin
 public import Mathlib.RingTheory.PrincipalIdealDomain
 public import Mathlib.RingTheory.Radical.Basic
 public import Mathlib.RingTheory.UniqueFactorizationDomain.Nat
+public import Mathlib.Algebra.Order.BigOperators.GroupWithZero.Finset
+public import Mathlib.Algebra.BigOperators.Associated
 
 /-!
 # The radical in `ℕ` and `ℤ`
@@ -143,5 +145,97 @@ lemma radical_pos (z : ℤ) : 0 < radical z := by
 
 @[simp, norm_cast] lemma radical_natCast {n : ℕ} : radical (n : ℤ) = radical n := by
   simp [Int.radical_eq_prod_primeFactors, Nat.radical_eq_prod_primeFactors]
+
+end Int
+
+/-! ### Odd radical -/
+
+namespace Nat
+
+/-- The **odd radical** of a natural number `n`: the product of the distinct
+**odd** primes dividing `n`. By convention `radicalOdd 0 = radicalOdd 1 = 1`. -/
+def radicalOdd (n : ℕ) : ℕ :=
+  ((n.primeFactors).erase 2).prod id
+
+@[simp] lemma radicalOdd_zero : radicalOdd 0 = 1 := by
+  unfold radicalOdd; simp
+
+@[simp] lemma radicalOdd_one : radicalOdd 1 = 1 := by
+  unfold radicalOdd; simp
+
+lemma radicalOdd_pos (n : ℕ) : 0 < radicalOdd n := by
+  unfold radicalOdd
+  exact Finset.prod_pos (fun p hp => by
+    rw [Finset.mem_erase, Nat.mem_primeFactors] at hp
+    exact hp.2.1.pos)
+
+lemma radicalOdd_ne_zero (n : ℕ) : radicalOdd n ≠ 0 :=
+  (radicalOdd_pos n).ne'
+
+lemma two_not_dvd_radicalOdd (n : ℕ) : ¬ 2 ∣ radicalOdd n := by
+  unfold radicalOdd
+  intro hdvd
+  have hp : _root_.Prime (2 : ℕ) := Nat.prime_iff.mp Nat.prime_two
+  rcases (hp.dvd_finsetProd_iff (g := id)).mp hdvd with ⟨q, hq_mem, hq_dvd⟩
+  rw [Finset.mem_erase, Nat.mem_primeFactors] at hq_mem
+  have hq_prime : q.Prime := hq_mem.2.1
+  have h2eq : (2 : ℕ) = q :=
+    ((Nat.prime_dvd_prime_iff_eq Nat.prime_two hq_prime).mp hq_dvd)
+  exact hq_mem.1 h2eq.symm
+
+lemma radicalOdd_dvd_radical (n : ℕ) : radicalOdd n ∣ radical n := by
+  unfold radicalOdd
+  rw [Nat.radical_eq_prod_primeFactors]
+  exact Finset.prod_dvd_prod_of_subset _ _ id (Finset.erase_subset _ _)
+
+lemma radicalOdd_dvd_self (n : ℕ) : radicalOdd n ∣ n := by
+  by_cases hn : n = 0
+  · simp [hn]
+  · exact (radicalOdd_dvd_radical n).trans (radical_dvd_self (a := n))
+
+lemma radicalOdd_eq_radical_of_odd {n : ℕ} (h : ¬ 2 ∣ n) :
+    radicalOdd n = radical n := by
+  unfold radicalOdd
+  rw [Nat.radical_eq_prod_primeFactors]
+  rw [show (n.primeFactors.erase 2).prod id = (n.primeFactors).prod id from ?_]
+  · rfl
+  · congr 1
+    apply Finset.erase_eq_of_notMem
+    rw [Nat.mem_primeFactors]
+    rintro ⟨_, h2, _⟩
+    exact h h2
+
+end Nat
+
+namespace Int
+
+/-- The **odd radical** of an integer `z`: the product of odd primes dividing
+`|z|`, returned as an integer. -/
+def radicalOdd (z : ℤ) : ℤ := (Nat.radicalOdd z.natAbs : ℤ)
+
+@[simp] lemma radicalOdd_natAbs_eq_radicalOdd (z : ℤ) :
+    (Nat.radicalOdd z.natAbs : ℤ) = radicalOdd z := rfl
+
+@[simp] lemma radicalOdd_natCast {n : ℕ} :
+    radicalOdd (n : ℤ) = (Nat.radicalOdd n : ℤ) := by
+  simp [radicalOdd]
+
+@[simp] lemma radicalOdd_zero : radicalOdd 0 = 1 := by
+  unfold radicalOdd; simp
+
+@[simp] lemma radicalOdd_one : radicalOdd 1 = 1 := by
+  unfold radicalOdd; simp
+
+lemma radicalOdd_pos (z : ℤ) : 0 < radicalOdd z := by
+  simp only [radicalOdd, Nat.cast_pos]
+  exact Nat.radicalOdd_pos _
+
+lemma radicalOdd_ne_zero (z : ℤ) : radicalOdd z ≠ 0 :=
+  (radicalOdd_pos z).ne'
+
+lemma two_not_dvd_radicalOdd (z : ℤ) : ¬ (2 : ℤ) ∣ radicalOdd z := by
+  intro hdvd
+  unfold radicalOdd at hdvd
+  exact Nat.two_not_dvd_radicalOdd _ (by exact_mod_cast hdvd)
 
 end Int
