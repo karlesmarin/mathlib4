@@ -3578,6 +3578,7 @@ public import Mathlib.Combinatorics.Graph.Subgraph
 public import Mathlib.Combinatorics.HalesJewett
 public import Mathlib.Combinatorics.Hall.Basic
 public import Mathlib.Combinatorics.Hall.Finite
+public import Mathlib.Combinatorics.Hall.Tight
 public import Mathlib.Combinatorics.Hindman
 public import Mathlib.Combinatorics.Hypergraph.Basic
 public import Mathlib.Combinatorics.KatonaCircle
